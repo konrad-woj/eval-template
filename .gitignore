@@ -216,3 +216,8 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# research/ is a reference/optional-deps pyproject; its lock is large (400+
+# transitive packages across every optional layer) and regenerable on demand
+# via `uv lock --directory research` -- not worth tracking.
+research/uv.lock
