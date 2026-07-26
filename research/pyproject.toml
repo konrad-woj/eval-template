@@ -1,0 +1,101 @@
+[project]
+name = "eval-review-research"
+version = "0.0.0"
+description = "Optional dependencies for graduating research/scripts demos to the real production tooling they stand in for. Nothing here is required to run the demos -- they are stdlib-only."
+requires-python = "==3.13.*"
+dependencies = []
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.0,<10.0.0",
+    "ruff>=0.15.0,<1.0.0",
+    "taskipy>=1.14.0,<2.0.0",
+]
+
+# To pull in the real tooling for one layer:
+#   uv sync --directory research --extra layer-d
+# or add one package on top of the demo env:
+#   uv add --directory research --optional layer-d ragas
+# `uv run --directory research scripts/run_all.py` works with zero extras
+# installed, since the demo scripts themselves have no dependencies.
+[project.optional-dependencies]
+# Layer A -- reference-based text metrics
+layer-a = [
+    "sacrebleu",     # standardized BLEU (replaces the raw formula in layer_a_deterministic.py)
+    "rouge-score",   # official ROUGE implementation
+    "jsonschema",   # real JSON-schema validation (replaces check_schema())
+]
+# Layer B -- semantic similarity & hallucination detection
+layer-b = [
+    "sentence-transformers",  # real sentence embeddings (replaces the bag-of-words cosine demo)
+    "bert-score",          # BERTScore (Zhang et al. 2020)
+    "selfcheckgpt",           # SelfCheckGPT (Manakul et al. 2023)
+]
+# Layer C -- LLM-as-judge
+layer-c = [
+    "deepeval",  # G-Eval, DAGMetric, ConversationalGEval reference implementations
+]
+# Layer D -- RAG
+layer-d = [
+    "ragas",        # retrieval + faithfulness + context precision/recall
+    "trulens-eval", # RAG Triad
+    "ir-measures",  # standard IR ranking metrics (precision/recall/MRR/nDCG)
+    "evidently",    # 15+ ranking metrics, drift detection (also Layer H)
+]
+# Layer E -- agents
+# BFCL and tau-bench are harnesses/benchmarks, not pip packages -- see
+# github.com/ShishirPatil/gorilla and github.com/sierra-research/tau2-bench
+layer-e = [
+    "agentevals",  # LangChain trajectory match variants
+]
+# Layer F -- safety / adversarial
+# promptfoo is a Node CLI, not a pip package -- see npmjs.com/package/promptfoo
+layer-f = [
+    "detoxify",           # toxicity classification
+    "presidio-analyzer",  # PII detection
+    "pyrit",               # Microsoft's red-teaming framework
+    "garak",               # LLM vulnerability scanner
+]
+# Layer G -- human & meta-evaluation
+layer-g = [
+    "scikit-learn",   # cohen_kappa_score
+    "krippendorff",   # Krippendorff's alpha
+]
+# Layer H -- statistics & monitoring
+layer-h = [
+    "scipy",         # statistical tests, confidence intervals
+    "statsmodels",   # clustered standard errors
+    "langfuse",       # LLM tracing/monitoring
+    "arize-phoenix",  # LLM tracing/monitoring
+]
+# Framework-level: evaluate instead of / alongside metric libraries
+frameworks = [
+    "inspect-ai",  # UK AISI Inspect: Task/Dataset/Solver/Scorer eval harness
+]
+
+[tool.ruff]
+line-length = 120
+target-version = "py313"
+
+[tool.ruff.format]
+docstring-code-format = true
+quote-style = "double"
+
+[tool.ruff.lint]
+select = ["A", "B", "C", "E", "F", "W", "I", "UP", "FURB", "RUF"]
+exclude = [".venv"]
+ignore = ["E501", "C901"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.pyright]
+venvPath = "."
+venv = ".venv"
+
+[tool.taskipy.tasks]
+precommits = { cmd = "uvx ruff format . && uvx ruff check . --fix --unsafe-fixes && uvx pyright .", help = "Lint, format and typecheck the research/ demos" }
+demo = { cmd = "uv run scripts/run_all.py", help = "Run every layer's demo against the shared fixture" }
+
+[tool.uv]
+package = false
